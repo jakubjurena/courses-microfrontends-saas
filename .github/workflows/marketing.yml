@@ -1,16 +1,23 @@
-name: deploy-container
+# name - name of the workflow
+# on - event that triggers the workflow (push to main branch, specify paths)
+# defaults - default values for jobs - move to package folder
+# jobs - list of jobs (build)
+# jubs / runs-on - type of runner (ubuntu-latest)
+# jobs / steps - Checkout code, Install dependencies, Build container, Install the AWS-CLI, Deploy to S3, Invalidate index.html and remoteEntry.js in CloudFront
+
+name: deploy-marketing
 
 on:
   push:
     branches:
       - main
     paths:
-      - "packages/container/**"
-      - ".github/workflows/container.yml"
+      - "packages/marketing/**"
+      - ".github/workflows/marketing.yml"
 
 defaults:
   run:
-    working-directory: packages/container
+    working-directory: packages/marketing
 
 jobs:
   build:
@@ -21,21 +28,19 @@ jobs:
         uses: actions/checkout@v2
       - name: Install dependencies
         run: npm install
-      - name: Build container
+      - name: Build marketing
         run: npm run build
-        env:
-          PRODUCTION_DOMAIN: ${{ vars.PRODUCTION_DOMAIN }}
 
       - name: Install the AWS-CLI (most recent version)
         uses: shinyinc/action-aws-cli@v1.2
       - name: Deploy to S3
-        run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/container/latest
+        run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/marketing/latest
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
       - name: Invalidate index.html in CloudFront
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} --paths "/container/latest/index.html"
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} --paths "/marketing/latest/remoteEntry.js"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
