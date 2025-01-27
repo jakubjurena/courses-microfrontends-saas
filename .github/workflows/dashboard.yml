@@ -1,0 +1,47 @@
+# name - name of the workflow
+# on - event that triggers the workflow (push to main branch, specify paths)
+# defaults - default values for jobs - move to package folder
+# jobs - list of jobs (build)
+# jubs / runs-on - type of runner (ubuntu-latest)
+# jobs / steps - Checkout code, Install dependencies, Build container, Install the AWS-CLI, Deploy to S3, Invalidate index.html and remoteEntry.js in CloudFront
+
+name: deploy-dashboard
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/dashboard/**"
+      - ".github/workflows/dashboard.yml"
+
+defaults:
+  run:
+    working-directory: packages/dashboard
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: npm install
+      - name: Build dashboard
+        run: npm run build
+
+      - name: Install the AWS-CLI (most recent version)
+        uses: shinyinc/action-aws-cli@v1.2
+      - name: Deploy to S3
+        run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/dashboard/latest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      - name: Invalidate remoteEntry.js in CloudFront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} --paths "/dashboard/latest/remoteEntry.js"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
