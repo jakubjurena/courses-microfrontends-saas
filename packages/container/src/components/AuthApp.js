@@ -32,3 +32,5 @@ export const AuthApp = () => {
 
   return <div ref={ref} />;
 };
+
+export default AuthApp;
