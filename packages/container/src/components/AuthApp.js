@@ -1,8 +1,8 @@
-import { mount } from "marketing/marketingBootstrap";
+import { mount } from "auth/authBootstrap";
 import React, { useRef, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 
-export const MarketingApp = () => {
+export const AuthApp = () => {
   const ref = useRef(null);
   const history = useHistory();
 
